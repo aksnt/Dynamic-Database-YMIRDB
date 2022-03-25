@@ -71,63 +71,84 @@ int main(void) {
         num_words = 0;
         input = get_words(line, &num_words);
         if (strcasecmp(input[0], "LIST") == 0) {
-            if (strcasecmp(input[1], "KEYS") == 0)
+            if (strcasecmp(input[1], "KEYS") == 0) {
                 list_keys();
-            else if (strcasecmp(input[1], "ENTRIES") == 0)
+				printf("\n");
+			}
+            else if (strcasecmp(input[1], "ENTRIES") == 0) {
                 list_entries();
+				printf("\n");
+			}
             // else if (strcasecmp(input[1], "SNAPSHOTS") == 0)
             // list_snapshots();
             else
                 printf("Invalid command\n");
         } else if (strcasecmp(input[0], "SET") == 0) {
             set();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "GET") == 0) {
             get();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "DEL") == 0) {
             del();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "PUSH") == 0) {
             push();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "APPEND") == 0) {
             append();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "PICK") == 0) {
             pick();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "PLUCK") == 0) {
             pluck();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "POP") == 0) {
             pop();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "SUM") == 0) {
             sum();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "MIN") == 0) {
             min();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "MAX") == 0) {
             max();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "LEN") == 0) {
             len();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "REV") == 0) {
             rev();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "UNIQ") == 0) {
             uniq();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "TYPE") == 0) {
             type();
+			printf("\n");
         } else if (strcasecmp(input[0], "SORT") == 0) {
             sort();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "FORWARD") == 0) {
             forward();
+			printf("\n");
 
         } else if (strcasecmp(input[0], "SNAPSHOT") == 0) {
         } else if (strcasecmp(input[0], "ROLLBACK") == 0) {
@@ -148,12 +169,7 @@ int main(void) {
         for (int i = 0; i < num_words; ++i)
             free(input[i]);
 
-        free(input);
-
-		if (!(strcasecmp(input[0], "HELP"))) {
-			printf("\n");
-		}
-		
+        free(input);		
 
     }
 
