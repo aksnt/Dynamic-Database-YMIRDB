@@ -672,7 +672,7 @@ void pop() {
         (position->values)[i] = (position->values)[i + 1];
 
         remove_forward(position, (position->values)[i].entry);
-        remove_backward((position->values)[i].entry, position);
+        //remove_backward((position->values)[i].entry, position);
     } 
     
     position->length--;
