@@ -39,7 +39,7 @@ int main(void) {
 	char line[MAX_LINE];
 
 	while (true) {
-		printf("> ");
+		printf(">  ");
 
 		if (NULL == fgets(line, MAX_LINE, stdin)) {
 			printf("\n");
