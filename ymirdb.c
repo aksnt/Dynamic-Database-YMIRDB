@@ -149,7 +149,12 @@ int main(void) {
             free(input[i]);
 
         free(input);
-		printf("\n");
+
+		if (!(strcasecmp(input[0], "HELP"))) {
+			printf("\n");
+		}
+		
+
     }
 
     return 0;
