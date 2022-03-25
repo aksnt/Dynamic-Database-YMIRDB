@@ -422,7 +422,7 @@ void get() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
     if (!validate_key())
@@ -437,7 +437,7 @@ void del() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -509,7 +509,7 @@ void append() {
 
     entry *position = get_entry_by_key(input[1]);
     if (!position) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -543,7 +543,7 @@ void push() {
 
     entry *position = get_entry_by_key(input[1]);
     if (!position) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -559,6 +559,7 @@ void push() {
     // [1 @ @ 2 3]
     // [ @ @ 1 2 3]
     // [5 6 1 2 3]
+
 
     for (int i = position->length - (num_words - 2); i >= 0; i--) {
         element tmp = (position->values)[i];
@@ -613,7 +614,7 @@ void pluck() {
 
     entry *position = get_entry_by_key(input[1]);
     if (!position) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -649,7 +650,7 @@ void pop() {
 
     entry *position = get_entry_by_key(input[1]);
     if (!position) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -698,7 +699,7 @@ void sum() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -737,7 +738,7 @@ void min() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -774,7 +775,7 @@ void max() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -809,7 +810,7 @@ void len() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -828,7 +829,7 @@ void rev() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
 
@@ -857,7 +858,7 @@ void uniq() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
     if (!receiver->is_simple) {
@@ -908,7 +909,7 @@ void type() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
     if (receiver->is_simple) {
@@ -956,7 +957,7 @@ void forward() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
     if (!receiver->forward_size) {
@@ -972,7 +973,7 @@ void backward() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
     if (!receiver->backward_size) {
@@ -994,7 +995,7 @@ void sort() {
 
     entry *receiver = get_entry_by_key(input[1]);
     if (!receiver) {
-        printf("Key not found\n");
+        printf("no such key\n");
         return;
     }
     if (!receiver->is_simple) {
