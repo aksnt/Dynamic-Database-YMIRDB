@@ -149,6 +149,7 @@ int main(void) {
             free(input[i]);
 
         free(input);
+		printf("\n");
     }
 
     return 0;
