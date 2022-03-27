@@ -870,11 +870,7 @@ void uniq() {
         printf("nil\n");
         return;
     }
-    // 2 ways
-    // 1st: O(nm)
-    // 2nd: 1 2 2 2 3 4 4
-    //////: 0 0 1 1 0 0 1 O(n)
-    //////: 1 2 3 4     O(n) => O(n)
+
 
     int *flags = (int *)malloc(sizeof(int) * receiver->length);
     flags[0] = 0;
