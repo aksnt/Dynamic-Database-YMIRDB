@@ -187,7 +187,6 @@ int main(void) {
         } else if (strcasecmp(input[0], "DROP") == 0) {
         } else if (strcasecmp(input[0], "HELP") == 0) {
             help();
-            printf("\n");
 
         } else if (strcasecmp(input[0], "BYE") == 0) {
             //Free memory allocated for input
@@ -517,12 +516,12 @@ char validate_key() {
             continue;
 
         if (!get_entry_by_key(input[i], current_entries)) {
-            printf("Error\n");
+            printf("no such key\n");
             return 0;
         }
 
         if (strcmp(input[i], input[1]) == 0) {
-            printf("Error. Key cannot be the same\n");
+            printf("not permitted\n");
             return 0;
         }
     }
@@ -633,10 +632,7 @@ char del(entry *entries) {
 
 void purge() {
     char res = del(current_entries);
-    if (res == 2) {
-        printf("no such key\n");
-        return;
-    } else if (res == 3) {
+    if (res == 3) {
         printf("not permitted\n");
         return;
     }
@@ -1238,6 +1234,7 @@ void print_forward(entry *receiver) {
         } else {
             printf("%s, ", future->key);
         }
+
     }
     free(p);
 }
