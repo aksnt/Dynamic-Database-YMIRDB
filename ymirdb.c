@@ -47,7 +47,7 @@ void pluck();
 void pop();
 
 void drop();
-
+void rollback();
 void checkout();
 void snapsh();  // snapshot command
 
@@ -182,6 +182,9 @@ int main(void) {
             printf("\n");
 
         } else if (strcasecmp(input[0], "ROLLBACK") == 0) {
+            rollback();
+            printf("\n");
+
         } else if (strcasecmp(input[0], "HELP") == 0) {
             help();
 
@@ -193,6 +196,7 @@ int main(void) {
             free(input);
             bye();
             break;
+
         } else {
             command_invalid();
             printf("\n");
@@ -336,8 +340,8 @@ snapshot *get_snap_by_id(int id) {
     return NULL;
 }
 
-//returns head of the copied list
-entry *deep_copy_entries(entry* entries) {
+// returns head of the copied list
+entry *deep_copy_entries(entry *entries) {
     if (!entries)
         return NULL;
 
@@ -754,13 +758,15 @@ void drop() {
         n->prev = p;
     }
 
+    //free forward and backward?
+
     free_entries(current->entries);
     free(current);
     printf("ok\n");
 }
 
 void rollback() {
-    if (!validate_snapshot(2)){
+    if (!validate_snapshot(2)) {
         return;
     }
 
@@ -770,10 +776,38 @@ void rollback() {
         return;
     }
 
+    // state restoration
     entry *pointer = current_entries;
     pointer = deep_copy_entries(position->entries);
     current_entries = pointer;
-    
+
+    // deleting newer snapshots
+    entry *entries = position->entries;
+    entries = entries->next;
+    entry* temp = entries;
+
+    while (entries) {
+        if (!(position->prev)) {
+            if (position->next)
+                position->next->prev = NULL;
+
+        } else if (!(position->next)) {
+            position->prev->next = NULL;
+
+        } else {
+            snapshot *p = position->prev;
+            snapshot *n = position->next;
+            p->next = n;
+            n->prev = p;
+        }
+        temp = entries->next;
+        free(entries);
+        entries = temp;
+        
+    }
+
+    //free the memory?
+    printf("ok\n");
 }
 
 void checkout() {
@@ -1188,7 +1222,7 @@ void forward() {
         printf("no such key\n");
         return;
     }
-    if (receiver->is_simple && !receiver->forward_size) {
+    if (!receiver->forward_size) {
         printf("nil\n");
         return;
     }
@@ -1223,7 +1257,7 @@ void backward() {
         printf("no such key\n");
         return;
     }
-    if (receiver->is_simple && !receiver->backward_size) {
+    if (!receiver->backward_size) {
         printf("nil\n");
         return;
     }
