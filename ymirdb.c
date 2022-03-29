@@ -828,6 +828,11 @@ void pick() {
     int index = atoi2(input[2]);
     entry *receiver = get_entry_by_key(input[1], current_entries);
 
+    if (!receiver) {
+        printf("no such key\n");
+        return;
+    }
+
     if (index > receiver->length || index <= 0) {
         printf("index out of range\n");
         return;
