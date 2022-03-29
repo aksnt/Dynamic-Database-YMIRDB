@@ -13,18 +13,17 @@
 #include <string.h>
 #include <strings.h>
 
-
 // Global Variables
 int num_words = 0;
 char **input = NULL;
 entry *current_entries = NULL;
 snapshot *stored_snapshots = NULL;
 
-//Utility functions
+// Utility functions
 int num_words_in_line(char *line);
 char **get_words(char *line, int *num_words);
 char is_integer(char *str);
-int atoi2(char *str) ;
+int atoi2(char *str);
 
 // General commands
 void bye();
@@ -50,7 +49,7 @@ void pop();
 void drop();
 
 void checkout();
-void snapsh(); //snapshot command
+void snapsh();  // snapshot command
 
 void min();
 void max();
@@ -80,7 +79,7 @@ int main(void) {
         input = get_words(line, &num_words);
 
         if (strcasecmp(input[0], "LIST") == 0) {
-            if (strcasecmp(input[1], "KEYS") == 0) 
+            if (strcasecmp(input[1], "KEYS") == 0)
                 list_keys();
             else if (strcasecmp(input[1], "ENTRIES") == 0)
                 list_entries();
@@ -183,13 +182,11 @@ int main(void) {
             printf("\n");
 
         } else if (strcasecmp(input[0], "ROLLBACK") == 0) {
-        } else if (strcasecmp(input[0], "CHECKOUT") == 0) {
-        } else if (strcasecmp(input[0], "DROP") == 0) {
         } else if (strcasecmp(input[0], "HELP") == 0) {
             help();
 
         } else if (strcasecmp(input[0], "BYE") == 0) {
-            //Free memory allocated for input
+            // Free memory allocated for input
             for (int i = 0; i < num_words; ++i)
                 free(input[i]);
 
@@ -339,12 +336,12 @@ snapshot *get_snap_by_id(int id) {
     return NULL;
 }
 
-entry *deep_copy_current_snapshots() {
-    if (!stored_snapshots)
+//returns head of the copied list
+entry *deep_copy_entries(entry* entries) {
+    if (!entries)
         return NULL;
 
-    snapshot *position = get_snap_by_id(atoi2(input[1]));
-    entry *cursor = position->entries;
+    entry *cursor = entries;
     entry *prev_copied_cursor = NULL;
     entry *copied_head = NULL;
 
@@ -372,76 +369,7 @@ entry *deep_copy_current_snapshots() {
         cursor = cursor->next;
     }
 
-    cursor = position->entries;
-    entry *copied_cursor = copied_head;
-    while (cursor) {
-        copied_cursor->values = (element *)malloc(sizeof(element) * cursor->length);
-        for (int i = 0; i < cursor->length; i++) {
-            if ((cursor->values)[i].type == INTEGER)
-                (copied_cursor->values)[i] = (cursor->values)[i];
-            else {
-                (copied_cursor->values)[i].type = ENTRY;
-                (copied_cursor->values)[i].entry =
-                    get_entry_by_key(
-                        (cursor->values)[i].entry->key,
-                        copied_head);
-            }
-        }
-
-        copied_cursor->forward = (entry **)malloc(sizeof(entry) * cursor->forward_size);
-        for (int i = 0; i < cursor->forward_size; i++) {
-            (copied_cursor->forward)[i] = get_entry_by_key(
-                (cursor->forward)[i]->key,
-                copied_head);
-        }
-
-        copied_cursor->backward = (entry **)malloc(sizeof(entry) * cursor->backward_size);
-        for (int i = 0; i < cursor->backward_size; i++) {
-            (copied_cursor->backward)[i] = get_entry_by_key(
-                (cursor->backward)[i]->key,
-                copied_head);
-        }
-
-        cursor = cursor->next;
-        copied_cursor = copied_cursor->next;
-    }
-
-    return copied_head;
-}
-
-entry *deep_copy_current_entries() {
-    if (!current_entries)
-        return NULL;
-
-    entry *cursor = current_entries;
-    entry *prev_copied_cursor = NULL;
-    entry *copied_head = NULL;
-
-    // [entry1] <-> [entry2] <-> [entry3]
-    // [copy01] <-> [copy02]     [copy03]
-
-    while (cursor) {
-        entry *mem = (entry *)malloc(sizeof(entry));
-        if (!copied_head) {
-            copied_head = mem;
-        }
-
-        mem->prev = prev_copied_cursor;
-        if (prev_copied_cursor)
-            prev_copied_cursor->next = mem;
-
-        prev_copied_cursor = mem;
-
-        strcpy(mem->key, cursor->key);
-        mem->is_simple = cursor->is_simple;
-        mem->length = cursor->length;
-        mem->forward_size = cursor->forward_size;
-        mem->backward_size = cursor->backward_size;
-
-        cursor = cursor->next;
-    }
-
-    cursor = current_entries;
+    cursor = entries;
     entry *copied_cursor = copied_head;
     while (cursor) {
         copied_cursor->values = (element *)malloc(sizeof(element) * cursor->length);
@@ -632,7 +560,9 @@ char del(entry *entries) {
 
 void purge() {
     char res = del(current_entries);
-    if (res == 3) {
+    if (res == 1) {
+        return;
+    } else if (res == 3) {
         printf("not permitted\n");
         return;
     }
@@ -741,13 +671,13 @@ void push() {
 
     // adds forward and backward position
     position->is_simple = 1;
-    for (int i = 0; i < num_words - 2; ++i) {
+    for (int i = 0, j = num_words - 1; i < (num_words - 2); i++, --j) {
         if (is_integer(input[i + 2])) {
             (position->values)[i].type = INTEGER;
-            (position->values)[i].value = atoi2(input[i + 2]);
+            (position->values)[i].value = atoi2(input[j]);
         } else {
             (position->values)[i].type = ENTRY;
-            (position->values)[i].entry = get_entry_by_key(input[i + 2], current_entries);
+            (position->values)[i].entry = get_entry_by_key(input[j], current_entries);
             position->is_simple = 0;
 
             add_forward(position, (position->values)[i].entry);
@@ -829,14 +759,8 @@ void drop() {
     printf("ok\n");
 }
 
-void checkout() {
-    if (num_words - 2 != 0) {
-        printf("Invalid command\n");
-        return;
-    }
-
-    if (!is_integer(input[1])) {
-        printf("ID is not an integer\n");
+void rollback() {
+    if (!validate_snapshot(2)){
         return;
     }
 
@@ -845,15 +769,29 @@ void checkout() {
         printf("no such snapshot\n");
         return;
     }
+
     entry *pointer = current_entries;
-    pointer = deep_copy_current_snapshots();
+    pointer = deep_copy_entries(position->entries);
+    current_entries = pointer;
+    
+}
+
+void checkout() {
+    if (!validate_snapshot(2))
+        return;
+
+    snapshot *position = get_snap_by_id(atoi2(input[1]));
+    if (!position) {
+        printf("no such snapshot\n");
+        return;
+    }
+
+    entry *pointer = current_entries;
+    pointer = deep_copy_entries(position->entries);
     current_entries = pointer;
 
     printf("ok\n");
 }
-
-
-
 
 void snapsh() {
     snapshot *new_snap = malloc(sizeof(snapshot));
@@ -878,12 +816,10 @@ void snapsh() {
         stored_snapshots = new_snap;
     }
 
-    new_snap->entries = deep_copy_current_entries();
+    new_snap->entries = deep_copy_entries(current_entries);
 
     printf("saved as snapshot %d\n", new_snap->id);
 }
-
-
 
 void pick() {
     if (!validate_input(2))
@@ -892,7 +828,7 @@ void pick() {
     int index = atoi2(input[2]);
     entry *receiver = get_entry_by_key(input[1], current_entries);
 
-    if (index > receiver->length || index <= 0) {
+    if (index >= receiver->length || index <= 0) {
         printf("index out of range\n");
         return;
     }
@@ -1234,7 +1170,6 @@ void print_forward(entry *receiver) {
         } else {
             printf("%s, ", future->key);
         }
-
     }
     free(p);
 }
@@ -1323,8 +1258,7 @@ void command_invalid() {
     printf("Invalid operation, try HELP.\n");
 }
 
-//Utility functionns below
-
+// Utility functionns below
 int num_words_in_line(char *line) {
     int len_line = strlen(line);
     int num_words = 0;
@@ -1400,7 +1334,8 @@ char is_integer(char *str) {
 
     return 1;
 }
-// Code adapted from week 2 tutorial by Jiahao Chen with a little change
+
+// Code adapted from week 2 tutorial by Jiahao Chen (with slight change)
 int atoi2(char *str) {
     int is_negative = 1;
     int result = 0;
