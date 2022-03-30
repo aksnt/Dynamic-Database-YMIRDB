@@ -26,8 +26,8 @@ char **get_words(char *line, int *num_words);
 char is_integer(char *str);
 int atoi2(char *str);
 char validate_snapshot(int valid_num_words);
-void del_entries(entry *cursor, entry *entries, char is_current_entries);
-void del_entry(entry *cursor, entry *entries, char is_current_entries);
+void del_entries(entry *cursor, entry *entries, char is_current_entries, snapshot *snapshot);
+void del_entry(entry *cursor, entry *entries, char is_current_entries, snapshot *snapshot);
 
 // General commands
 void bye();
@@ -259,13 +259,14 @@ void del_snapshots(snapshot *cur) {
         return;
 
     del_snapshots(cur->next);
-    del_entries(cur->entries, cur->entries, 0);
+    if (cur->entries_head)
+        del_entries(cur->entries, cur->entries, 0, cur);
     free(cur);
 }
 
 void bye() {
     if (current_entries_head != NULL)
-        del_entries(current_entries, current_entries, 1);
+        del_entries(current_entries, current_entries, 1, NULL);
 
     del_snapshots(stored_snapshots);
     printf("bye\n");
@@ -566,7 +567,7 @@ void get() {
 }
 
 // Helper to delete a single entry
-void del_entry(entry *receiver, entry *entries, char is_current_entries) {
+void del_entry(entry *receiver, entry *entries, char is_current_entries, snapshot *snapshot) {
     if (!(receiver->prev)) {
         if (receiver->next) {
             receiver->next->prev = NULL;
@@ -575,6 +576,8 @@ void del_entry(entry *receiver, entry *entries, char is_current_entries) {
         entries = receiver->next;
         if (is_current_entries)
             current_entries_head = entries;
+        else if (snapshot)
+            snapshot->entries_head = entries;
 
     } else if (!(receiver->next)) {
         receiver->prev->next = NULL;
@@ -585,8 +588,12 @@ void del_entry(entry *receiver, entry *entries, char is_current_entries) {
         n->prev = p;
     }
 
-    if (is_current_entries && receiver->prev == NULL && receiver->next == NULL)
-        current_entries_head = NULL;
+    if (receiver->prev == NULL && receiver->next == NULL) {
+        if (is_current_entries)
+            current_entries_head = NULL;
+        else if (snapshot)
+            snapshot->entries_head = NULL;
+    }
 
     // Removes the backward reference for the entry being deleted
     for (int i = 0; i < receiver->forward_size; i++)
@@ -601,13 +608,13 @@ void del_entry(entry *receiver, entry *entries, char is_current_entries) {
 // [1] - [2] - [3] - [4] - [5] - NULL
 
 // Helper that utilises del_entry(); to delete multiple entries with recursion
-void del_entries(entry *cursor, entry *entries, char is_current_entries) {
+void del_entries(entry *cursor, entry *entries, char is_current_entries, snapshot *snapshot) {
     if (cursor == NULL) return;
 
     // do smt before recrusive function
-    del_entries(cursor->next, entries, is_current_entries);
+    del_entries(cursor->next, entries, is_current_entries, snapshot);
     // do smt after recrusive function
-    del_entry(cursor, entries, is_current_entries);
+    del_entry(cursor, entries, is_current_entries, snapshot);
 }
 
 char del(entry *entries) {
@@ -626,15 +633,17 @@ char del(entry *entries) {
         return 3;
     }
 
-    del_entry(receiver, current_entries, 1);
-    if(current_entries_head)
-    current_entries = current_entries_head;
+    del_entry(receiver, current_entries, 1, NULL);
+    if (current_entries_head)
+        current_entries = current_entries_head;
     return 0;
 }
 
 void purge() {
     // Calls del() on entry first
-    del_entries(current_entries, current_entries, 1);
+    del_entries(current_entries, current_entries, 1, NULL);
+    if (current_entries_head)
+        current_entries = current_entries_head;
     // if (res == 1) {
     //     return;
     // } else if (res == 3) {
@@ -647,7 +656,7 @@ void purge() {
     while (current) {
         entry *cursor = get_entry_by_key(input[1], current->entries);
         if (cursor)
-            del_entries(current->entries, current->entries, 0);
+            del_entries(current->entries, current->entries, 0, current);
 
         current = current->next;
     }
@@ -842,7 +851,8 @@ char drop(int id) {
     }
 
     // Entries in that snapshot are deleted
-    del_entries(current->entries, current_entries, 0);
+    if (current->entries_head)
+        del_entries(current->entries, current->entries, 0, current);
     // Free *current
     free(current);
     return 1;
@@ -860,12 +870,18 @@ void rollback() {
     }
 
     // Entries are completely deleted in the current list
-    del_entries(current_entries, current_entries, 1);
+    if (current_entries_head)
+        del_entries(current_entries, current_entries, 1, NULL);
+
     snapshot *cursor = stored_snapshots;
     snapshot *temp;
 
     // Based on the snapshot ID, its entries are deep copied to the current entries
-    current_entries = deep_copy_entries(position->entries);
+    if (position->entries_head) {
+        current_entries = deep_copy_entries(position->entries);
+    } else
+        current_entries = NULL;
+
     current_entries_head = current_entries;
 
     // Deleting newer snapshots
@@ -889,7 +905,7 @@ void checkout() {
     }
 
     // Deletes entries and copies over those from the snapshot ID in input[1]
-    del_entries(current_entries, current_entries, 0);
+    del_entries(current_entries, current_entries, 0, position);
 
     current_entries = deep_copy_entries(position->entries);
     current_entries_head = current_entries;
@@ -926,6 +942,7 @@ void snapsh() {
 
     // Deep copy the current state into this snapshot
     new_snap->entries = deep_copy_entries(current_entries);
+    new_snap->entries_head = new_snap->entries;
 
     printf("saved as snapshot %d\n", new_snap->id);
 }
@@ -1427,7 +1444,6 @@ void sort() {
 void command_invalid() {
     printf("Invalid operation, try HELP.\n");
 }
-
 
 // Utility functions below
 

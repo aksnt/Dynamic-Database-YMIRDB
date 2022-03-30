@@ -45,6 +45,7 @@ struct entry {
 struct snapshot {
     int id;
     entry* entries;
+    entry* entries_head;
     snapshot* next;
     snapshot* prev;
 };
