@@ -642,6 +642,15 @@ void purge() {
 
     if (!validate_key())
         return;
+    
+    entry *receiver = NULL;
+    if (current_entries_head)
+        receiver = get_entry_by_key(input[1], current_entries);
+
+    if (receiver->backward_size > 0) {
+        printf("not permitted\n");
+        return;
+    }
 
     if (current_entries_head)
         del_entries(current_entries, current_entries, 1, NULL);
