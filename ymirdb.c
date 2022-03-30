@@ -641,16 +641,7 @@ void purge() {
         return;
 
     if (!validate_key())
-        return;
-    
-    entry *receiver = NULL;
-    if (current_entries_head)
-        receiver = get_entry_by_key(input[1], current_entries);
-
-    if (receiver->backward_size > 0) {
-        printf("not permitted\n");
-        return;
-    }
+        return;   
 
     if (current_entries_head)
         del_entries(current_entries, current_entries, 1, NULL);
@@ -679,7 +670,6 @@ void set() {
         return;
 
     // Key valid. Store position of key here if found in database
-
     entry *position = NULL;
     if (current_entries_head)
         position = get_entry_by_key(input[1], current_entries);
