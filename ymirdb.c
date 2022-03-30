@@ -659,7 +659,9 @@ void set() {
         return;
 
     // Key valid. Store position of key here if found in database
-    entry *position = get_entry_by_key(input[1], current_entries);
+    entry *position = NULL;
+    if(current_entries_head)
+        position = get_entry_by_key(input[1], current_entries);
     char is_new_entry = 0;
 
     // Realloc memory based on the new entry for a key
