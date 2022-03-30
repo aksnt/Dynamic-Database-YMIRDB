@@ -506,7 +506,6 @@ void list_keys() {
         return;
     }
 
-
     entry *cursor = current_entries;
     while (cursor) {
         printf("%s\n", cursor->key);
@@ -555,7 +554,7 @@ void get() {
     entry *receiver = NULL;
     if (current_entries_head)
         receiver = get_entry_by_key(input[1], current_entries);
-        
+
     if (!receiver) {
         printf("no such key\n");
         return;
@@ -574,6 +573,9 @@ void del_entry(entry *receiver, entry *entries, char is_current_entries) {
         }
 
         entries = receiver->next;
+        if (is_current_entries)
+            current_entries_head = entries;
+
     } else if (!(receiver->next)) {
         receiver->prev->next = NULL;
     } else {  // free b in eg1
@@ -615,7 +617,7 @@ char del(entry *entries) {
     entry *receiver = NULL;
     if (current_entries_head)
         receiver = get_entry_by_key(input[1], current_entries);
-        
+
     if (!receiver) {
         return 2;
     }
@@ -625,6 +627,8 @@ char del(entry *entries) {
     }
 
     del_entry(receiver, current_entries, 1);
+    if(current_entries_head)
+    current_entries = current_entries_head;
     return 0;
 }
 
@@ -659,8 +663,9 @@ void set() {
         return;
 
     // Key valid. Store position of key here if found in database
+
     entry *position = NULL;
-    if(current_entries_head)
+    if (current_entries_head)
         position = get_entry_by_key(input[1], current_entries);
     char is_new_entry = 0;
 
@@ -714,6 +719,7 @@ void set() {
         current_entries->prev = position;
         position->next = current_entries;
         current_entries = position;
+        current_entries_head = current_entries;
     }
 
     printf("ok\n");
