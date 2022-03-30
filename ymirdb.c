@@ -1107,9 +1107,10 @@ int min_helper(entry *receiver) {
             min2 = min_helper(e.entry);
         }
         // Compare the minimums in both cases to find the true minimum
-        if (min2 < min)
-            min = min2;
+        
     }
+    if (min2 < min)
+         min = min2;
 
     // Return the minimum of the entire entry
     return min;
