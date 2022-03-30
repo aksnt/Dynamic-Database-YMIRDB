@@ -24,6 +24,9 @@ int num_words_in_line(char *line);
 char **get_words(char *line, int *num_words);
 char is_integer(char *str);
 int atoi2(char *str);
+char validate_snapshot(int valid_num_words);
+void del_entries(entry *cursor, entry* entries);
+void del_entry(entry* cursor, entry* entries);
 
 // General commands
 void bye();
@@ -46,7 +49,7 @@ void pick();
 void pluck();
 void pop();
 
-void drop();
+char drop();
 void rollback();
 void checkout();
 void snapsh();  // snapshot command
@@ -170,7 +173,14 @@ int main(void) {
             printf("\n");
 
         } else if (strcasecmp(input[0], "DROP") == 0) {
-            drop();
+            if (!validate_snapshot(2))
+                continue;
+            char res = drop(atoi2(input[1]));
+            if (res == 0)
+                printf("no such snapshot\n");
+            else
+                printf("ok\n");
+
             printf("\n");
 
         } else if (strcasecmp(input[0], "CHECKOUT") == 0) {
@@ -240,9 +250,19 @@ void print_elements(entry *receiver) {
     printf("]\n");
 }
 
+void del_snapshots(snapshot* cur)
+{
+    if(!cur)
+        return;
+
+    del_snapshots(cur->next);
+    del_entries(cur->entries, cur->entries);  
+    free(cur);
+}
+
 void bye() {
-    free_entries(current_entries);
-    free(stored_snapshots);
+    del_entries(current_entries, current_entries);
+    del_snapshots(stored_snapshots);
     printf("bye\n");
 }
 
@@ -276,7 +296,7 @@ void remove_forward(entry *current, entry *forward) {
             }
 
             (current->forward_size)--;
-            current->forward = (entry **)realloc(current->forward, sizeof(entry *) * current->forward_size);
+            // current->forward = (entry **)realloc(current->forward, sizeof(entry *) * current->forward_size);
             return;
         }
     }
@@ -308,7 +328,7 @@ void remove_backward(entry *current, entry *backward) {
             }
 
             (current->backward_size)--;
-            current->backward = (entry **)realloc(current->backward, sizeof(entry *) * current->backward_size);
+            // current->backward = (entry **)realloc(current->backward, sizeof(entry *) * current->backward_size);
             return;
         }
     }
@@ -359,6 +379,7 @@ entry *deep_copy_entries(entry *entries) {
         }
 
         mem->prev = prev_copied_cursor;
+        mem->next = NULL;
         if (prev_copied_cursor)
             prev_copied_cursor->next = mem;
 
@@ -516,19 +537,7 @@ void get() {
     print_elements(receiver);
 }
 
-char del(entry *entries) {
-    if (!validate_input(2))
-        return 1;
-
-    entry *receiver = get_entry_by_key(input[1], entries);
-    if (!receiver) {
-        return 2;
-    }
-
-    if (receiver->backward_size > 0) {
-        return 3;
-    }
-
+void del_entry(entry *receiver, entry* entries) {
     // Eg1: a b c
     // free a in eg1
     if (!(receiver->prev)) {
@@ -536,8 +545,7 @@ char del(entry *entries) {
             receiver->next->prev = NULL;
         }
 
-        current_entries = receiver->next;
-
+        entries = receiver->next;
     } else if (!(receiver->next)) {  // free c in eg1
 
         receiver->prev->next = NULL;
@@ -558,7 +566,33 @@ char del(entry *entries) {
     free(receiver->backward);
     free(receiver->values);
     free(receiver);
+}
 
+// [1] - [2] - [3] - [4] - [5] - NULL
+
+void del_entries(entry *cursor, entry* entries) {
+    if (cursor == NULL) return;
+
+    // do smt before recrusive function
+    del_entries(cursor->next, entries);
+    // do smt after recrusive function
+    del_entry(cursor, entries);
+}
+
+char del(entry *entries) {
+    if (!validate_input(2))
+        return 1;
+
+    entry *receiver = get_entry_by_key(input[1], entries);
+    if (!receiver) {
+        return 2;
+    }
+
+    if (receiver->backward_size > 0) {
+        return 3;
+    }
+
+    del_entry(receiver, current_entries);
     return 0;
 }
 
@@ -726,20 +760,10 @@ void append() {
     printf("ok\n");
 }
 
-void drop() {
-    if (!validate_snapshot(2))
-        return;
-
-    snapshot *current = get_snap_by_id(atoi2(input[1]));
+char drop(int id) {
+    snapshot *current = get_snap_by_id(id);
     if (!current) {
-        printf("no such snapshot\n");
-        return;
-    }
-
-    entry *entries = current->entries;
-    if (!entries) {
-        printf("no entries in snapshot\n");
-        return;
+        return 0;
     }
 
     if (!(current->prev)) {
@@ -758,11 +782,9 @@ void drop() {
         n->prev = p;
     }
 
-    //free forward and backward?
-
-    free_entries(current->entries);
+    del_entries(current->entries, current_entries);
     free(current);
-    printf("ok\n");
+    return 1;
 }
 
 void rollback() {
@@ -776,37 +798,20 @@ void rollback() {
         return;
     }
 
+    del_entries(current_entries, current_entries);
+    snapshot *cursor = stored_snapshots;
+    snapshot *temp;
     // state restoration
-    entry *pointer = current_entries;
-    pointer = deep_copy_entries(position->entries);
-    current_entries = pointer;
-
+    current_entries = deep_copy_entries(position->entries);
+    // cursor                 //position
+    //[7] - [6] - [5] - [4] - [3] - [2] - [1]
     // deleting newer snapshots
-    entry *entries = position->entries;
-    entries = entries->next;
-    entry* temp = entries;
-
-    while (entries) {
-        if (!(position->prev)) {
-            if (position->next)
-                position->next->prev = NULL;
-
-        } else if (!(position->next)) {
-            position->prev->next = NULL;
-
-        } else {
-            snapshot *p = position->prev;
-            snapshot *n = position->next;
-            p->next = n;
-            n->prev = p;
-        }
-        temp = entries->next;
-        free(entries);
-        entries = temp;
-        
+    while (cursor != position) {
+        temp = cursor->next;
+        drop(cursor->id);
+        cursor = temp;
     }
 
-    //free the memory?
     printf("ok\n");
 }
 
@@ -820,10 +825,9 @@ void checkout() {
         return;
     }
 
-    entry *pointer = current_entries;
-    pointer = deep_copy_entries(position->entries);
-    current_entries = pointer;
+    del_entries(current_entries, current_entries);
 
+    current_entries = deep_copy_entries(position->entries);
     printf("ok\n");
 }
 
@@ -1109,7 +1113,7 @@ void rev() {
     }
 
     if (!receiver->is_simple) {
-        printf("Cannot perform on general entries\n");
+        printf("not permitted on general entries\n");
         return;
     }
 
@@ -1137,7 +1141,7 @@ void uniq() {
         return;
     }
     if (!receiver->is_simple) {
-        printf("Cannot perform on general entries\n");
+        printf("not permitted on general entries\n");
         return;
     }
 
@@ -1280,7 +1284,7 @@ void sort() {
         return;
     }
     if (!receiver->is_simple) {
-        printf("Cannot perform on general entries\n");
+        printf("not permitted on general entries\n");
         return;
     }
 
