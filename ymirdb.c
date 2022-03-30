@@ -17,6 +17,7 @@
 int num_words = 0;
 char **input = NULL;
 entry *current_entries = NULL;
+entry *current_entries_head = NULL;
 snapshot *stored_snapshots = NULL;
 
 // Utility functions
@@ -25,8 +26,8 @@ char **get_words(char *line, int *num_words);
 char is_integer(char *str);
 int atoi2(char *str);
 char validate_snapshot(int valid_num_words);
-void del_entries(entry *cursor, entry* entries);
-void del_entry(entry* cursor, entry* entries);
+void del_entries(entry *cursor, entry *entries, char is_current_entries);
+void del_entry(entry *cursor, entry *entries, char is_current_entries);
 
 // General commands
 void bye();
@@ -221,6 +222,7 @@ int main(void) {
     return 0;
 }
 
+// function to recursively free entries
 void free_entries(entry *cursor) {
     if (!cursor)
         return;
@@ -232,6 +234,7 @@ void free_entries(entry *cursor) {
     free(cursor);
 }
 
+// Helper function which is used for printing entries in get() or list_entries()
 void print_elements(entry *receiver) {
     printf("[");
 
@@ -250,18 +253,20 @@ void print_elements(entry *receiver) {
     printf("]\n");
 }
 
-void del_snapshots(snapshot* cur)
-{
-    if(!cur)
+// Recursively deletes and frees entries
+void del_snapshots(snapshot *cur) {
+    if (!cur)
         return;
 
     del_snapshots(cur->next);
-    del_entries(cur->entries, cur->entries);  
+    del_entries(cur->entries, cur->entries, 0);
     free(cur);
 }
 
 void bye() {
-    del_entries(current_entries, current_entries);
+    if(current_entries_head != NULL)
+        del_entries(current_entries, current_entries, 1);
+
     del_snapshots(stored_snapshots);
     printf("bye\n");
 }
@@ -270,6 +275,7 @@ void help() {
     printf("%s\n", HELP);
 }
 
+// Adds forward position to an entry
 void add_forward(entry *current, entry *forward) {
     char is_added = 1;
     for (int j = 0; j < current->forward_size; ++j) {
@@ -281,11 +287,13 @@ void add_forward(entry *current, entry *forward) {
 
     if (is_added) {
         (current->forward_size)++;
-        current->forward = (entry **)realloc(current->forward, sizeof(entry *) * current->forward_size);
+        current->forward = (entry **)
+            realloc(current->forward, sizeof(entry *) * current->forward_size);
         (current->forward)[current->forward_size - 1] = forward;
     }
 }
 
+// Removes forward position to an entry
 void remove_forward(entry *current, entry *forward) {
     for (int j = 0; j < current->forward_size; ++j) {
         if (forward == (current->forward)[j]) {
@@ -302,6 +310,7 @@ void remove_forward(entry *current, entry *forward) {
     }
 }
 
+// Adds backward position to an entry
 void add_backward(entry *current, entry *backward) {
     char is_added = 1;
     for (int j = 0; j < current->backward_size; ++j) {
@@ -313,11 +322,13 @@ void add_backward(entry *current, entry *backward) {
 
     if (is_added) {
         (current->backward_size)++;
-        current->backward = (entry **)realloc(current->backward, sizeof(entry *) * current->backward_size);
+        current->backward = (entry **)
+            realloc(current->backward, sizeof(entry *) * current->backward_size);
         (current->backward)[current->backward_size - 1] = backward;
     }
 }
 
+// Removes forward position to an entry
 void remove_backward(entry *current, entry *backward) {
     for (int j = 0; j < current->backward_size; ++j) {
         if (backward == (current->backward)[j]) {
@@ -334,6 +345,7 @@ void remove_backward(entry *current, entry *backward) {
     }
 }
 
+// Returns the position of the entry in linkedlist based on input[1]
 entry *get_entry_by_key(char *key, entry *entries) {
     entry *cursor = entries;
     while (cursor != NULL) {
@@ -347,6 +359,7 @@ entry *get_entry_by_key(char *key, entry *entries) {
     return NULL;
 }
 
+// Returns the position of the snapshot ID based on the input[1]
 snapshot *get_snap_by_id(int id) {
     snapshot *snap = stored_snapshots;
     while (snap) {
@@ -360,7 +373,7 @@ snapshot *get_snap_by_id(int id) {
     return NULL;
 }
 
-// returns head of the copied list
+// Deep copies LinkedList and returns head of the copied list
 entry *deep_copy_entries(entry *entries) {
     if (!entries)
         return NULL;
@@ -397,7 +410,8 @@ entry *deep_copy_entries(entry *entries) {
     cursor = entries;
     entry *copied_cursor = copied_head;
     while (cursor) {
-        copied_cursor->values = (element *)malloc(sizeof(element) * cursor->length);
+        copied_cursor->values =
+            (element *)malloc(sizeof(element) * cursor->length);
         for (int i = 0; i < cursor->length; i++) {
             if ((cursor->values)[i].type == INTEGER)
                 (copied_cursor->values)[i] = (cursor->values)[i];
@@ -410,14 +424,16 @@ entry *deep_copy_entries(entry *entries) {
             }
         }
 
-        copied_cursor->forward = (entry **)malloc(sizeof(entry) * cursor->forward_size);
+        copied_cursor->forward =
+            (entry **)malloc(sizeof(entry) * cursor->forward_size);
         for (int i = 0; i < cursor->forward_size; i++) {
             (copied_cursor->forward)[i] = get_entry_by_key(
                 (cursor->forward)[i]->key,
                 copied_head);
         }
 
-        copied_cursor->backward = (entry **)malloc(sizeof(entry) * cursor->backward_size);
+        copied_cursor->backward =
+            (entry **)malloc(sizeof(entry) * cursor->backward_size);
         for (int i = 0; i < cursor->backward_size; i++) {
             (copied_cursor->backward)[i] = get_entry_by_key(
                 (cursor->backward)[i]->key,
@@ -431,6 +447,7 @@ entry *deep_copy_entries(entry *entries) {
     return copied_head;
 }
 
+// Helper to validate input
 char validate_input(int valid_num_words) {
     if (num_words < valid_num_words) {
         printf("Error. Invalid Command\n");
@@ -450,6 +467,7 @@ char validate_input(int valid_num_words) {
     return 1;
 }
 
+// Helper to validate snapshot input
 char validate_snapshot(int valid_num_words) {
     if (num_words < valid_num_words) {
         printf("Error. Invalid Command\n");
@@ -463,6 +481,7 @@ char validate_snapshot(int valid_num_words) {
     return 1;
 }
 
+// Helper to ensure key inputted is valid
 char validate_key() {
     for (int i = 2; i < num_words; ++i) {
         if (is_integer(input[i]))
@@ -537,17 +556,15 @@ void get() {
     print_elements(receiver);
 }
 
-void del_entry(entry *receiver, entry* entries) {
-    // Eg1: a b c
-    // free a in eg1
+// Helper to delete a single entry
+void del_entry(entry *receiver, entry *entries, char is_current_entries) {
     if (!(receiver->prev)) {
         if (receiver->next) {
             receiver->next->prev = NULL;
         }
 
         entries = receiver->next;
-    } else if (!(receiver->next)) {  // free c in eg1
-
+    } else if (!(receiver->next)) {
         receiver->prev->next = NULL;
     } else {  // free b in eg1
         entry *p = receiver->prev;
@@ -556,9 +573,10 @@ void del_entry(entry *receiver, entry* entries) {
         n->prev = p;
     }
 
-    // a -> b -> c
-    // d -> c
+    if(is_current_entries && receiver->prev == NULL && receiver->next == NULL)
+        current_entries_head = NULL;
 
+    // Removes the backward reference for the entry being deleted
     for (int i = 0; i < receiver->forward_size; i++)
         remove_backward((receiver->forward)[i], receiver);
 
@@ -570,13 +588,14 @@ void del_entry(entry *receiver, entry* entries) {
 
 // [1] - [2] - [3] - [4] - [5] - NULL
 
-void del_entries(entry *cursor, entry* entries) {
+// Helper that utilises del_entry(); to delete multiple entries with recursion
+void del_entries(entry *cursor, entry *entries, char is_current_entries) {
     if (cursor == NULL) return;
 
     // do smt before recrusive function
-    del_entries(cursor->next, entries);
+    del_entries(cursor->next, entries, is_current_entries);
     // do smt after recrusive function
-    del_entry(cursor, entries);
+    del_entry(cursor, entries, is_current_entries);
 }
 
 char del(entry *entries) {
@@ -592,11 +611,12 @@ char del(entry *entries) {
         return 3;
     }
 
-    del_entry(receiver, current_entries);
+    del_entry(receiver, current_entries, 1);
     return 0;
 }
 
 void purge() {
+    // Calls del() on entry first
     char res = del(current_entries);
     if (res == 1) {
         return;
@@ -605,6 +625,7 @@ void purge() {
         return;
     }
 
+    // Calls on del() to remove all entries in a snapshot
     snapshot *current = stored_snapshots;
     while (current) {
         entry *cursor = get_entry_by_key(input[1], current->entries);
@@ -628,11 +649,12 @@ void set() {
     entry *position = get_entry_by_key(input[1], current_entries);
     char is_new_entry = 0;
 
-    // realloc memory based on the entries
+    // Realloc memory based on the new entry for a key
     if (position) {
-        position->values = (element *)realloc(position->values, sizeof(element) * (num_words - 2));
+        position->values =
+            (element *)realloc(position->values, sizeof(element) * (num_words - 2));
 
-        // key doesn't eixst, allocate memory for new entry
+        // Key doesn't exist, allocate memory for new entry
     } else {
         is_new_entry = 1;
         position = (entry *)malloc(sizeof(entry));
@@ -648,14 +670,15 @@ void set() {
 
     position->is_simple = 1;
 
-    // Assign values for entry
+    // Assign values for entry along with its type
     for (int i = 0; i < num_words - 2; ++i) {
         if (is_integer(input[i + 2])) {
             (position->values)[i].type = INTEGER;
             (position->values)[i].value = atoi2(input[i + 2]);
         } else {
             (position->values)[i].type = ENTRY;
-            (position->values)[i].entry = get_entry_by_key(input[i + 2], current_entries);
+            (position->values)[i].entry =
+                get_entry_by_key(input[i + 2], current_entries);
             position->is_simple = 0;
 
             add_forward(position, (position->values)[i].entry);
@@ -663,12 +686,15 @@ void set() {
         }
     }
 
+    // Update the length of the entry
     position->length = num_words - 2;
 
-    if (current_entries == NULL) {
+    // Insert the new node at the head of the list whether it is new or not
+    if (current_entries_head == NULL) {
         current_entries = position;
         current_entries->next = NULL;
         current_entries->prev = NULL;
+        current_entries_head = current_entries;
     } else if (is_new_entry) {
         current_entries->prev = position;
         position->next = current_entries;
@@ -691,8 +717,10 @@ void push() {
     if (!validate_key())
         return;
 
+    // Realloc memory based on the number of input being pushed
     position->length += num_words - 2;
-    position->values = (element *)realloc(position->values, sizeof(element) * position->length);
+    position->values =
+        (element *)realloc(position->values, sizeof(element) * position->length);
 
     // PUSH a 5 6
     // [1 2 3 @ @]
@@ -701,6 +729,7 @@ void push() {
     // [ @ @ 1 2 3]
     // [5 6 1 2 3]
 
+    // shift values of the existing entry
     for (int i = position->length - (num_words - 2) - 1; i >= 0; i--) {
         element tmp = (position->values)[i];
         (position->values)[i] = (position->values)[i + (num_words - 2)];
@@ -715,7 +744,8 @@ void push() {
             (position->values)[i].value = atoi2(input[j]);
         } else {
             (position->values)[i].type = ENTRY;
-            (position->values)[i].entry = get_entry_by_key(input[j], current_entries);
+            (position->values)[i].entry =
+                get_entry_by_key(input[j], current_entries);
             position->is_simple = 0;
 
             add_forward(position, (position->values)[i].entry);
@@ -739,8 +769,12 @@ void append() {
     if (!validate_key())
         return;
 
+    // Realloc memory based on the additional input
     position->length += num_words - 2;
-    position->values = (element *)realloc(position->values, sizeof(element) * position->length);
+    position->values =
+        (element *)realloc(position->values, sizeof(element) * position->length);
+
+    // Update the values in the entry
     position->is_simple = 1;
     for (int i = 0; i < num_words - 2; ++i) {
         int index = position->length - (num_words - 2) + i;
@@ -749,7 +783,8 @@ void append() {
             (position->values)[index].value = atoi2(input[i + 2]);
         } else {
             (position->values)[index].type = ENTRY;
-            (position->values)[index].entry = get_entry_by_key(input[i + 2], current_entries);
+            (position->values)[index].entry =
+                get_entry_by_key(input[i + 2], current_entries);
             position->is_simple = 0;
 
             add_forward(position, (position->values)[index].entry);
@@ -766,15 +801,18 @@ char drop(int id) {
         return 0;
     }
 
+    // If we are dropping a snapshot at the head of the list
     if (!(current->prev)) {
         if (current->next)
             current->next->prev = NULL;
 
         stored_snapshots = current->next;
 
+        // If we are dropping a snapshot at the tail of the list
     } else if (!(current->next)) {
         current->prev->next = NULL;
 
+        // If we are dropping a snapshot in the middle (all other cases)
     } else {
         snapshot *p = current->prev;
         snapshot *n = current->next;
@@ -782,7 +820,9 @@ char drop(int id) {
         n->prev = p;
     }
 
-    del_entries(current->entries, current_entries);
+    // Entries in that snapshot are deleted
+    del_entries(current->entries, current_entries, 0);
+    // Free *current
     free(current);
     return 1;
 }
@@ -798,14 +838,16 @@ void rollback() {
         return;
     }
 
-    del_entries(current_entries, current_entries);
+    // Entries are completely deleted in the current list
+    del_entries(current_entries, current_entries, 1);
     snapshot *cursor = stored_snapshots;
     snapshot *temp;
-    // state restoration
+
+    // Based on the snapshot ID, its entries are deep copied to the current entries
     current_entries = deep_copy_entries(position->entries);
-    // cursor                 //position
-    //[7] - [6] - [5] - [4] - [3] - [2] - [1]
-    // deleting newer snapshots
+    current_entries_head = current_entries;
+
+    // Deleting newer snapshots
     while (cursor != position) {
         temp = cursor->next;
         drop(cursor->id);
@@ -825,19 +867,24 @@ void checkout() {
         return;
     }
 
-    del_entries(current_entries, current_entries);
+    // Deletes entries and copies over those from the snapshot ID in input[1]
+    del_entries(current_entries, current_entries, 0);
 
     current_entries = deep_copy_entries(position->entries);
+    current_entries_head = current_entries;
     printf("ok\n");
 }
 
 void snapsh() {
     snapshot *new_snap = malloc(sizeof(snapshot));
+
+    // If it is the first snapshot, begin counting ID from 1
     if (!stored_snapshots) {
         new_snap->id = 1;
         stored_snapshots = new_snap;
         new_snap->next = NULL;
         new_snap->prev = NULL;
+        // Otherwise, find the position to insert the new snapshot using max_id
     } else {
         snapshot *cursor = stored_snapshots;
         int max_id = 0;
@@ -847,6 +894,8 @@ void snapsh() {
             }
             cursor = cursor->next;
         }
+
+        // Insert the new snapshot at the head of list in all cases
         new_snap->id = max_id + 1;
         new_snap->next = stored_snapshots;
         new_snap->prev = NULL;
@@ -854,6 +903,7 @@ void snapsh() {
         stored_snapshots = new_snap;
     }
 
+    // Deep copy the current state into this snapshot
     new_snap->entries = deep_copy_entries(current_entries);
 
     printf("saved as snapshot %d\n", new_snap->id);
@@ -876,7 +926,11 @@ void pick() {
         return;
     }
 
-    element pick = (receiver->values)[index - 1];
+    // PICK is indexed from 1, while receiver->values are from 0 thus index - 1
+    index--;
+    element pick = (receiver->values)[index];
+
+    // Print based on the item type
     if (pick.type == INTEGER) {
         printf("%d\n", pick.value);
     } else {
@@ -901,7 +955,7 @@ void pluck() {
         return;
     }
 
-    // printing of the value
+    // Print the value
     index--;
     element pluck = (position->values)[index];
     if (pluck.type == INTEGER) {
@@ -910,7 +964,7 @@ void pluck() {
         printf("%s\n", (pluck.entry)->key);
     }
 
-    // removing value and shifting array
+    // Removing value and shifting array
     for (int i = index; i < position->length - 1; ++i) {
         (position->values)[i] = (position->values)[i + 1];
 
@@ -919,7 +973,8 @@ void pluck() {
     }
     // Realloc memory based on new length
     position->length--;
-    position->values = (element *)realloc(position->values, sizeof(element) * position->length);
+    position->values =
+        (element *)realloc(position->values, sizeof(element) * position->length);
 }
 
 void pop() {
@@ -938,6 +993,7 @@ void pop() {
     }
 
     element pop = (position->values)[0];
+
     // printing of the value
     if (pop.type == INTEGER) {
         printf("%d\n", pop.value);
@@ -950,25 +1006,27 @@ void pop() {
         (position->values)[i] = (position->values)[i + 1];
     }
 
-    // if (position->backward_size) {
-    //     remove_backward((position->values)[index].entry, position);
-    // }
-
     position->length--;
-    position->values = (element *)realloc(position->values, sizeof(element) * position->length);
+    position->values =
+        (element *)realloc(position->values, sizeof(element) * position->length);
 }
 
+// Helper function to recursively total the entry
 int sum_helper(entry *receiver) {
     int sum = 0;
     for (int i = 0; i < receiver->length; ++i) {
         element e = (receiver->values)[i];
+
+        // If it is a value, add it to current sum
         if (e.type == INTEGER) {
             sum += e.value;
+            // Otherwise, it is a key, recusrively call sum_helper to add to total sum
         } else {
             sum += sum_helper(e.entry);
         }
     }
 
+    // Returns the total sum
     return sum;
 }
 
@@ -987,27 +1045,38 @@ void sum() {
         return;
     }
 
+    // Calls on helper function to recursively sum
     int answer = sum_helper(receiver);
     printf("%d\n", answer);
 }
 
+// Helper function to recursively find the minimum of the entry
 int min_helper(entry *receiver) {
     element e = (receiver->values)[0];
+
+    // Keeps track of the current minimum of current entry
     int min;
+
+    // Keeps track of the minimum of a key within the current entry
     int min2;
 
     for (int i = 0; i < receiver->length; ++i) {
         e = (receiver->values)[i];
+
+        // Stores minimum if it is a value
         if (e.type == INTEGER) {
             if (e.value < min)
                 min = e.value;
+            // If it is a key, recursively store the minimum in min2
         } else {
             min2 = min_helper(e.entry);
         }
+        // Compare the minimums in both cases to find the true minimum
         if (min2 < min)
             min = min2;
     }
 
+    // Return the minimum of the entire entry
     return min;
 }
 
@@ -1031,8 +1100,9 @@ void min() {
 }
 
 int max_helper(entry *receiver) {
-    int max = min_helper(receiver);
-    int max2 = min_helper(receiver);
+    // Sets the current max to the minimum value of entry based on min_helper
+    int max = min_helper(receiver);   // stores max of the current entry
+    int max2 = min_helper(receiver);  // stores max of the entry if it contains a key
 
     for (int i = 0; i < receiver->length; ++i) {
         element e = (receiver->values)[i];
@@ -1043,6 +1113,8 @@ int max_helper(entry *receiver) {
             max2 = max_helper(e.entry);
         }
     }
+
+    // Compare and return true max, then return it
     if (max2 > max)
         max = max2;
     return max;
@@ -1073,13 +1145,17 @@ int len_helper(entry *receiver) {
 
     for (int i = 0; i < receiver->length; ++i) {
         e = (receiver->values)[i];
+
+        // Counts the length of the entry if it is an integer
         if (e.type == INTEGER) {
             len += 1;
+            // If it is a key, recusrively calls to count the length of that entry
         } else {
             len += len_helper(e.entry);
         }
     }
 
+    // Returns total length
     return len;
 }
 
@@ -1122,6 +1198,7 @@ void rev() {
         return;
     }
 
+    // Utilises tmp to reverse entries
     for (int i = 0, j = receiver->length - 1; i < j; ++i, --j) {
         element tmp;
         tmp = (receiver->values)[i];
@@ -1150,28 +1227,41 @@ void uniq() {
         return;
     }
 
+    // Allocate memory for an array that will calculate repeated values
     int *flags = (int *)malloc(sizeof(int) * receiver->length);
     flags[0] = 0;
-    int count = 1;  // number of non-repeated numbers
+
+    // stores number of non-repeated values
+    int count = 1;
+
     for (int i = 1; i < receiver->length; ++i) {
+        // If NEXT entry is equal to its previous, it is repeated thus flag as 1
         if ((receiver->values)[i].value == (receiver->values)[i - 1].value) {
             flags[i] = 1;
+            // Otherwise, simply flag as 0 and increase the count
         } else {
             flags[i] = 0;
             count++;
         }
     }
+
+    // Allocate memory for an array storing unique values
     element *unique = (element *)malloc(count * sizeof(element));
     for (int i = 0, j = 0; i < receiver->length; ++i) {
+        // Only store values marked with a 0 as they are unique, increment j
         if (flags[i] == 0) {
             unique[j++] = (receiver->values)[i];
         }
     }
+
+    // Realloc memory for the values of the entry based on the count
     receiver->values = realloc(receiver->values, count * sizeof(element));
     for (int i = 0; i < count; i++) {
         (receiver->values)[i] = unique[i];
     }
     receiver->length = count;
+
+    // Free unique and flags as they are no longer needed
     free(unique);
     free(flags);
     printf("ok\n");
@@ -1194,27 +1284,23 @@ void type() {
 }
 
 int print_cmp(const void *a, const void *b) {
-    const entry *a1 = *((entry **)a);
-    const entry *a2 = *((entry **)b);
-    return strcmp(a1->key, a2->key);
+    // Dereference the double pointer of entry to obtain value
+    const char *a1 = *((char **)a);
+    const char *a2 = *((char **)b);
+    // Compare these values to print in alphabetical order
+    return strcmp(a1, a2);
 }
 
-void print_forward(entry *receiver) {
-    entry **p = (entry **)malloc(sizeof(entry *) * receiver->forward_size);
+void get_forward(entry *receiver, char **result, int *result_size) {
     for (int i = 0; i < receiver->forward_size; ++i) {
-        p[i] = (receiver->forward)[i];
+        (*result_size)++;
+        result = realloc(result, sizeof(char *) * (*result_size));
+        result[*result_size - 1] = (receiver->forward)[i]->key;
     }
 
-    qsort(p, receiver->forward_size, sizeof(entry *), print_cmp);
     for (int i = 0; i < receiver->forward_size; ++i) {
-        entry *future = p[i];
-        if (i == receiver->forward_size - 1) {
-            printf("%s\n", future->key);
-        } else {
-            printf("%s, ", future->key);
-        }
+        get_forward((receiver->forward)[i], result, result_size);
     }
-    free(p);
 }
 
 void forward() {
@@ -1231,25 +1317,32 @@ void forward() {
         return;
     }
 
-    print_forward(receiver);
+    char **result = malloc(0);
+    int result_size = 0;
+    get_forward(receiver, result, &result_size);
+
+    qsort(result, result_size, sizeof(char *), print_cmp);
+    for (int i = 0; i < result_size; i++) {
+        printf("%s", result[i]);
+        if (i == result_size - 1)
+            printf("\n");
+        else
+            printf(" ");
+    }
+
+    free(result);
 }
 
-void print_backward(entry *receiver) {
-    entry **p = (entry **)malloc(sizeof(entry *) * receiver->backward_size);
+void get_backward(entry *receiver, char** result, int* result_size) {
     for (int i = 0; i < receiver->backward_size; ++i) {
-        p[i] = (receiver->backward)[i];
+        (*result_size)++;
+        result = realloc(result, sizeof(char *) * (*result_size));
+        result[*result_size - 1] = (receiver->backward)[i]->key;
     }
 
-    qsort(p, receiver->backward_size, sizeof(entry *), print_cmp);
     for (int i = 0; i < receiver->backward_size; ++i) {
-        entry *future = p[i];
-        if (i == receiver->backward_size - 1) {
-            printf("%s\n", future->key);
-        } else {
-            printf("%s, ", future->key);
-        }
+        get_backward((receiver->backward)[i], result, result_size);
     }
-    free(p);
 }
 
 void backward() {
@@ -1265,7 +1358,20 @@ void backward() {
         printf("nil\n");
         return;
     }
-    print_backward(receiver);
+    char **result = malloc(0);
+    int result_size = 0;
+    get_backward(receiver, result, &result_size);
+
+    qsort(result, result_size, sizeof(char *), print_cmp);
+    for (int i = 0; i < result_size; i++) {
+        printf("%s", result[i]);
+        if (i == result_size - 1)
+            printf("\n");
+        else
+            printf(" ");
+    }
+
+    free(result);
 }
 
 int compare(const void *a, const void *b) {
@@ -1301,12 +1407,15 @@ void command_invalid() {
     printf("Invalid operation, try HELP.\n");
 }
 
-// Utility functionns below
+// Utility functions below
+
+//Returns the number of words in the input while ignoring spaces
 int num_words_in_line(char *line) {
     int len_line = strlen(line);
     int num_words = 0;
-    //      Hello   world
+
     char is_last_char_space = 1;
+    
     // for each word
     for (int line_i = 0; line_i < len_line - 1; line_i++) {
         if (line[line_i] == ' ' || line[line_i] == '\t')
@@ -1321,6 +1430,7 @@ int num_words_in_line(char *line) {
     return num_words;
 }
 
+//Returns the input
 char **get_words(char *line, int *num_words) {
     int len_line = strlen(line);
     if (len_line == 0) {
@@ -1363,6 +1473,7 @@ char **get_words(char *line, int *num_words) {
     return words;
 }
 
+//Checks if a char is an integer
 char is_integer(char *str) {
     int start_index = 0;
     if (str[0] == '-') {
@@ -1378,7 +1489,7 @@ char is_integer(char *str) {
     return 1;
 }
 
-// Code adapted from week 2 tutorial by Jiahao Chen (with slight change)
+// Code adapted from week 2 tutorial by Jiahao Chen with a little change
 int atoi2(char *str) {
     int is_negative = 1;
     int result = 0;
