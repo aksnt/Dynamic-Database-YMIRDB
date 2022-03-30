@@ -626,20 +626,20 @@ char del(entry *entries) {
 
 void purge() {
     // Calls del() on entry first
-    char res = del(current_entries);
-    if (res == 1) {
-        return;
-    } else if (res == 3) {
-        printf("not permitted\n");
-        return;
-    }
+    del_entries(current_entries, current_entries, 1);
+    // if (res == 1) {
+    //     return;
+    // } else if (res == 3) {
+    //     printf("not permitted\n");
+    //     return;
+    // }
 
     // Calls on del() to remove all entries in a snapshot
     snapshot *current = stored_snapshots;
     while (current) {
         entry *cursor = get_entry_by_key(input[1], current->entries);
         if (cursor)
-            del(current->entries);
+            del_entries(current->entries, current->entries, 0);
 
         current = current->next;
     }
