@@ -1091,7 +1091,6 @@ int min_helper(entry *receiver) {
 
     // Keeps track of the current minimum of current entry
     int min;
-
     // Keeps track of the minimum of a key within the current entry
     int min2;
 
@@ -1102,6 +1101,7 @@ int min_helper(entry *receiver) {
         if (e.type == INTEGER) {
             if (e.value < min)
                 min = e.value;
+                
             // If it is a key, recursively store the minimum in min2
         } else {
             min2 = min_helper(e.entry);
@@ -1390,7 +1390,7 @@ void backward() {
     entry *receiver = NULL;
     if (current_entries_head)
         receiver = get_entry_by_key(input[1], current_entries);
-        
+
     if (!receiver) {
         printf("no such key\n");
         return;
