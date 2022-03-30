@@ -532,7 +532,7 @@ void list_entries() {
 
 void list_snapshots() {
     if (!stored_snapshots) {
-        printf("no snapshots\n");
+        printf("no snapshots\n\n");
         return;
     }
 
