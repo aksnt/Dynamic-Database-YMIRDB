@@ -1342,7 +1342,10 @@ void forward() {
     if (!validate_input(2))
         return;
 
-    entry *receiver = get_entry_by_key(input[1], current_entries);
+    entry *receiver = NULL;
+    if (current_entries_head)
+        receiver = get_entry_by_key(input[1], current_entries);
+
     if (!receiver) {
         printf("no such key\n");
         return;
@@ -1384,7 +1387,10 @@ void backward() {
     if (!validate_input(2))
         return;
 
-    entry *receiver = get_entry_by_key(input[1], current_entries);
+    entry *receiver = NULL;
+    if (current_entries_head)
+        receiver = get_entry_by_key(input[1], current_entries);
+        
     if (!receiver) {
         printf("no such key\n");
         return;
