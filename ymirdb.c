@@ -1,7 +1,7 @@
 /**
  * comp2017 - assignment 2
- * <your name>
- * <your unikey>
+ * <Akshil Nathu>
+ * <anat9934>
  */
 
 #include "ymirdb.h"
