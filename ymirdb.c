@@ -226,7 +226,6 @@ int main(void) {
 void free_entries(entry *cursor) {
     if (!cursor)
         return;
-
     free_entries(cursor->next);
     free(cursor->forward);
     free(cursor->backward);
