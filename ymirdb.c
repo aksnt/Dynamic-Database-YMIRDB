@@ -501,8 +501,11 @@ char validate_key() {
 }
 
 void list_keys() {
-    if (!current_entries)
-        printf("no keys\n");
+    if (!current_entries_head) {
+        printf("no keys\n\n");
+        return;
+    }
+
 
     entry *cursor = current_entries;
     while (cursor) {
@@ -513,8 +516,8 @@ void list_keys() {
 }
 
 void list_entries() {
-    if (!current_entries)
-        printf("no entries\n");
+    if (!current_entries_head)
+        printf("no entries\n\n");
 
     entry *cursor = current_entries;
     while (cursor) {
