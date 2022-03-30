@@ -516,8 +516,10 @@ void list_keys() {
 }
 
 void list_entries() {
-    if (!current_entries_head)
+    if (!current_entries_head) {
         printf("no entries\n\n");
+        return;
+    }
 
     entry *cursor = current_entries;
     while (cursor) {
@@ -529,8 +531,10 @@ void list_entries() {
 }
 
 void list_snapshots() {
-    if (!stored_snapshots)
+    if (!stored_snapshots) {
         printf("no snapshots\n");
+        return;
+    }
 
     snapshot *snap = stored_snapshots;
     while (snap) {
