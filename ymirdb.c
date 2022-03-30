@@ -264,7 +264,7 @@ void del_snapshots(snapshot *cur) {
 }
 
 void bye() {
-    if(current_entries_head != NULL)
+    if (current_entries_head != NULL)
         del_entries(current_entries, current_entries, 1);
 
     del_snapshots(stored_snapshots);
@@ -545,7 +545,10 @@ void get() {
     if (!validate_input(2))
         return;
 
-    entry *receiver = get_entry_by_key(input[1], current_entries);
+    entry *receiver = NULL;
+    if (current_entries_head)
+        receiver = get_entry_by_key(input[1], current_entries);
+        
     if (!receiver) {
         printf("no such key\n");
         return;
@@ -573,7 +576,7 @@ void del_entry(entry *receiver, entry *entries, char is_current_entries) {
         n->prev = p;
     }
 
-    if(is_current_entries && receiver->prev == NULL && receiver->next == NULL)
+    if (is_current_entries && receiver->prev == NULL && receiver->next == NULL)
         current_entries_head = NULL;
 
     // Removes the backward reference for the entry being deleted
@@ -602,7 +605,10 @@ char del(entry *entries) {
     if (!validate_input(2))
         return 1;
 
-    entry *receiver = get_entry_by_key(input[1], entries);
+    entry *receiver = NULL;
+    if (current_entries_head)
+        receiver = get_entry_by_key(input[1], current_entries);
+        
     if (!receiver) {
         return 2;
     }
@@ -1333,7 +1339,7 @@ void forward() {
     free(result);
 }
 
-void get_backward(entry *receiver, char** result, int* result_size) {
+void get_backward(entry *receiver, char **result, int *result_size) {
     for (int i = 0; i < receiver->backward_size; ++i) {
         (*result_size)++;
         result = realloc(result, sizeof(char *) * (*result_size));
@@ -1406,6 +1412,7 @@ void sort() {
 void command_invalid() {
     printf("Invalid operation, try HELP.\n");
 }
+
 
 // Utility functions below
 
