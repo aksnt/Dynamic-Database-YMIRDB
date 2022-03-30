@@ -605,8 +605,6 @@ void del_entry(entry *receiver, entry *entries, char is_current_entries, snapsho
     free(receiver);
 }
 
-// [1] - [2] - [3] - [4] - [5] - NULL
-
 // Helper that utilises del_entry(); to delete multiple entries with recursion
 void del_entries(entry *cursor, entry *entries, char is_current_entries, snapshot *snapshot) {
     if (cursor == NULL) return;
@@ -641,6 +639,7 @@ char del(entry *entries) {
 
 void purge() {
     // Calls del() on entry first
+
     del_entries(current_entries, current_entries, 1, NULL);
     if (current_entries_head)
         current_entries = current_entries_head;
