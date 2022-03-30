@@ -637,17 +637,17 @@ char del(entry *entries) {
 }
 
 void purge() {
-    // Calls del() on entry first
+    if (!validate_input(2))
+        return;
 
-    del_entries(current_entries, current_entries, 1, NULL);
+    if (!validate_key())
+        return;
+
+    if (current_entries_head)
+        del_entries(current_entries, current_entries, 1, NULL);
+
     if (current_entries_head)
         current_entries = current_entries_head;
-    // if (res == 1) {
-    //     return;
-    // } else if (res == 3) {
-    //     printf("not permitted\n");
-    //     return;
-    // }
 
     // Calls on del() to remove all entries in a snapshot
     snapshot *current = stored_snapshots;
