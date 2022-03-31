@@ -1113,6 +1113,7 @@ int min_helper(entry *receiver) {
          min = min2;
 
     // Return the minimum of the entire entry
+    
     return min;
 }
 
