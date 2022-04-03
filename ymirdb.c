@@ -4,11 +4,6 @@
  * <anat9934>
  */
 
-//Main headers
-#include "ymirdb.h"
-#include "commands.h"
-#include "helpers.h"
-#include "utility.h"
 
 //Library headers
 #include <ctype.h>
@@ -17,6 +12,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+
+//Main headers
+#include "ymirdb.h"
+#include "commands.h"
+#include "helpers.h"
+#include "utility.h"
 
 // Global Variables
 int num_words = 0; //Keeps count of the number of words in the input
@@ -1393,6 +1394,7 @@ void command_invalid() {
 }
 
 // Utility functions below. Defined in utility.h
+
 int num_words_in_line(char *line) {
     int len_line = strlen(line);
     int num_words = 0;
