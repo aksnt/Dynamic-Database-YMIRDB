@@ -1313,7 +1313,15 @@ void type() {
         printf("no such key\n");
         return;
     }
-    if (receiver->is_simple) {
+
+    char is_simple = 1;
+    for (int i = 0; i < receiver->length; ++i) {
+        element e = (receiver->values)[i];
+        if (e.type == ENTRY) 
+            is_simple = 0;
+    }
+    
+    if (is_simple) {
         printf("simple\n");
     } else {
         printf("general\n");
