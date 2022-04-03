@@ -1393,7 +1393,6 @@ void command_invalid() {
 }
 
 // Utility functions below. Defined in utility.h
-
 int num_words_in_line(char *line) {
     int len_line = strlen(line);
     int num_words = 0;
