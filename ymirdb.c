@@ -458,7 +458,6 @@ void list_entries() {
         printf("no entries\n\n");
         return;
     }
-
     entry *cursor = current_entries;
     while (cursor) {
         printf("%s ", cursor->key);
