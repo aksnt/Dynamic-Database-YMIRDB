@@ -4,8 +4,13 @@
  * <anat9934>
  */
 
+//Main headers
 #include "ymirdb.h"
+#include "commands.h"
+#include "helpers.h"
+#include "utility.h"
 
+//Library headers
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -14,59 +19,12 @@
 #include <strings.h>
 
 // Global Variables
-int num_words = 0;
-char **input = NULL;
-entry *current_entries = NULL;
-entry *current_entries_head = NULL;
-snapshot *stored_snapshots = NULL;
+int num_words = 0; //Keeps count of the number of words in the input
+char **input = NULL; //Stores the input as char**
+entry *current_entries = NULL; //Doubly LinkedList of the current entries
+entry *current_entries_head = NULL; //Stores the head of the current entries
+snapshot *stored_snapshots = NULL; //Doubly LinkedList of the stored snapshots
 
-// Utility functions
-int num_words_in_line(char *line);
-char **get_words(char *line, int *num_words);
-char is_integer(char *str);
-int atoi2(char *str);
-char validate_snapshot(int valid_num_words);
-void del_entries(entry *cursor, entry *entries, char is_current_entries, snapshot *snapshot);
-void del_entry(entry *cursor, entry *entries, char is_current_entries, snapshot *snapshot);
-
-// General commands
-void bye();
-void help();
-void command_invalid();
-void list_keys();
-void list_entries();
-void list_snapshots();
-
-// Main Commands
-void get();
-char del(entry *entries);
-void purge();
-
-void set();
-void push();
-void append();
-
-void pick();
-void pluck();
-void pop();
-
-char drop();
-void rollback();
-void checkout();
-void snapsh();  // snapshot command
-
-void min();
-void max();
-void sum();
-void len();
-
-void rev();
-void uniq();
-void sort();
-
-void forward();
-void backward();
-void type();
 
 int main(void) {
     char line[MAX_LINE];
@@ -222,18 +180,9 @@ int main(void) {
     return 0;
 }
 
-// function to recursively free entries
-void free_entries(entry *cursor) {
-    if (!cursor)
-        return;
-    free_entries(cursor->next);
-    free(cursor->forward);
-    free(cursor->backward);
-    free(cursor->values);
-    free(cursor);
-}
 
-// Helper function which is used for printing entries in get() or list_entries()
+//Main commands and helpers below. Defined in commands.h and helpers.h 
+
 void print_elements(entry *receiver) {
     printf("[");
 
@@ -252,7 +201,6 @@ void print_elements(entry *receiver) {
     printf("]\n");
 }
 
-// Recursively deletes and frees entries
 void del_snapshots(snapshot *cur) {
     if (!cur)
         return;
@@ -275,7 +223,6 @@ void help() {
     printf("%s\n", HELP);
 }
 
-// Adds forward position to an entry
 void add_forward(entry *current, entry *forward) {
     char is_added = 1;
     for (int j = 0; j < current->forward_size; ++j) {
@@ -293,7 +240,6 @@ void add_forward(entry *current, entry *forward) {
     }
 }
 
-// Removes forward position to an entry
 void remove_forward(entry *current, entry *forward) {
     for (int j = 0; j < current->forward_size; ++j) {
         if (forward == (current->forward)[j]) {
@@ -310,7 +256,6 @@ void remove_forward(entry *current, entry *forward) {
     }
 }
 
-// Adds backward position to an entry
 void add_backward(entry *current, entry *backward) {
     char is_added = 1;
     for (int j = 0; j < current->backward_size; ++j) {
@@ -328,7 +273,6 @@ void add_backward(entry *current, entry *backward) {
     }
 }
 
-// Removes forward position to an entry
 void remove_backward(entry *current, entry *backward) {
     for (int j = 0; j < current->backward_size; ++j) {
         if (backward == (current->backward)[j]) {
@@ -345,7 +289,6 @@ void remove_backward(entry *current, entry *backward) {
     }
 }
 
-// Returns the position of the entry in linkedlist based on input[1]
 entry *get_entry_by_key(char *key, entry *entries) {
     entry *cursor = entries;
     while (cursor != NULL) {
@@ -359,7 +302,6 @@ entry *get_entry_by_key(char *key, entry *entries) {
     return NULL;
 }
 
-// Returns the position of the snapshot ID based on the input[1]
 snapshot *get_snap_by_id(int id) {
     snapshot *snap = stored_snapshots;
     while (snap) {
@@ -373,7 +315,6 @@ snapshot *get_snap_by_id(int id) {
     return NULL;
 }
 
-// Deep copies LinkedList and returns head of the copied list
 entry *deep_copy_entries(entry *entries) {
     if (!entries)
         return NULL;
@@ -447,7 +388,6 @@ entry *deep_copy_entries(entry *entries) {
     return copied_head;
 }
 
-// Helper to validate input
 char validate_input(int valid_num_words) {
     if (num_words < valid_num_words) {
         printf("Error. Invalid Command\n");
@@ -467,7 +407,6 @@ char validate_input(int valid_num_words) {
     return 1;
 }
 
-// Helper to validate snapshot input
 char validate_snapshot(int valid_num_words) {
     if (num_words < valid_num_words) {
         printf("Error. Invalid Command\n");
@@ -481,7 +420,6 @@ char validate_snapshot(int valid_num_words) {
     return 1;
 }
 
-// Helper to ensure key inputted is valid
 char validate_key() {
     for (int i = 2; i < num_words; ++i) {
         if (is_integer(input[i]))
@@ -565,7 +503,6 @@ void get() {
     print_elements(receiver);
 }
 
-// Helper to delete a single entry
 void del_entry(entry *receiver, entry *entries, char is_current_entries, snapshot *snapshot) {
     if (!(receiver->prev)) {
         if (receiver->next) {
@@ -604,7 +541,6 @@ void del_entry(entry *receiver, entry *entries, char is_current_entries, snapsho
     free(receiver);
 }
 
-// Helper that utilises del_entry(); to delete multiple entries with recursion
 void del_entries(entry *cursor, entry *entries, char is_current_entries, snapshot *snapshot) {
     if (cursor == NULL) return;
 
@@ -1046,7 +982,6 @@ void pop() {
         (element *)realloc(position->values, sizeof(element) * position->length);
 }
 
-// Helper function to recursively total the entry
 int sum_helper(entry *receiver) {
     int sum = 0;
     for (int i = 0; i < receiver->length; ++i) {
@@ -1085,7 +1020,6 @@ void sum() {
     printf("%d\n", answer);
 }
 
-// Helper function to recursively find the minimum of the entry
 int min_helper(entry *receiver) {
     element e = (receiver->values)[0];
 
@@ -1458,9 +1392,8 @@ void command_invalid() {
     printf("Invalid operation, try HELP.\n");
 }
 
-// Utility functions below
+// Utility functions below. Defined in utility.h
 
-//Returns the number of words in the input while ignoring spaces
 int num_words_in_line(char *line) {
     int len_line = strlen(line);
     int num_words = 0;
@@ -1481,7 +1414,7 @@ int num_words_in_line(char *line) {
     return num_words;
 }
 
-//Returns the input
+
 char **get_words(char *line, int *num_words) {
     int len_line = strlen(line);
     if (len_line == 0) {
@@ -1524,7 +1457,6 @@ char **get_words(char *line, int *num_words) {
     return words;
 }
 
-//Checks if a char is an integer
 char is_integer(char *str) {
     int start_index = 0;
     if (str[0] == '-') {
@@ -1540,7 +1472,7 @@ char is_integer(char *str) {
     return 1;
 }
 
-// Code adapted from week 2 tutorial by Jiahao Chen with a little change
+// Code adapted from week 2 tutorial by Jiahao Chen
 int atoi2(char *str) {
     int is_negative = 1;
     int result = 0;
