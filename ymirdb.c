@@ -1045,7 +1045,6 @@ int min_helper(entry *receiver) {
     }
     if (min2 < min) {
          min = min2;
-
     }
     // Return the minimum of the entire entry
     
