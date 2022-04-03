@@ -1,0 +1,12 @@
+SET a 1 2 3 4 5 6 7 8
+SET b a a a a 
+SET b 6 7 8 9 5 4 2 1 4 
+SET d a b
+SET c d a b 
+LIST KEYS
+DROP 1
+SNAPSHOT
+DROP 1
+APPEND a b
+GET a
+BYE
