@@ -1,15 +1,15 @@
 TARGET = ymirdb
 
-CC = clang
+CC = gcc
 
-CFLAGS = -c -Wall -Wvla -Werror -g -Werror=format-security -std=c11 #-fsanitize=address
+CFLAGS = -c -Wall -Wvla -Werror -g -Werror=format-security -std=c11 -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address"
 SRC = ymirdb.c
 OBJ = $(SRC:.c=.o)
 
 all:$(TARGET)
 
 $(TARGET):$(OBJ)
-	$(CC) -o $@ $(OBJ) 
+	$(CC) -o $@ $(OBJ)
 
 .SUFFIXES: .c .o
 
