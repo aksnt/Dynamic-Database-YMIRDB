@@ -1,9 +1,0 @@
-SET a 1
-SET b a
-SET c b
-FORWARD a
-FORWARD c
-SET d a b c
-BACKWARD c
-BACKWARD d
-BYE

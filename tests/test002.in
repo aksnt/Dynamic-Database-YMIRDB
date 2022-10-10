@@ -1,7 +1,0 @@
-SET a 1 2 3 
-SET A 4 5 6 
-GET a
-GET A
-PUSH A 5
-POP A
-BYE
