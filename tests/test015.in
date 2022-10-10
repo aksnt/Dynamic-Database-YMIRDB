@@ -1,0 +1,13 @@
+SNAPSHOT
+SNAPSHOT
+SNAPSHOT
+set a 1 2 3
+SNAPSHOT
+get a
+gEt a
+sEt b 3 4 a
+cHeCkoUt 3
+RollBAcK 1
+get A
+get a
+bye

@@ -1,0 +1,11 @@
+SET a 1 2 3
+SET b 4 5 a
+SET c a b
+FORWARD c
+BACKWARD b
+MAX c
+MIN c
+LEN c
+SUM c
+TYPE c
+BYE
